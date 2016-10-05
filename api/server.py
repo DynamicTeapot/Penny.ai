@@ -8,9 +8,12 @@ from flask import Response
 from flask import json
 from flask import jsonify
 import numpy as np
-from sklearn.cluster import KMeans, DBSCAN
+from sklearn.decomposition import TruncatedSVD
+from sklearn.preprocessing import Normalizer
+from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.preprocessing import StandardScaler, Normalizer
+from sklearn.preprocessing import Normalizer
+from sklearn.pipeline import make_pipeline
 import wikipedia
 
 
@@ -23,44 +26,52 @@ categories = ['cooking', 'bathroom', 'sports', 'hardware', 'cars', 'technology',
 def getWikiContent (topic): 
   return wikipedia.page(topic).content;
 
-def getWikiSuggestions (topic):
-  return wikipedia.search(topic)
+def getWikiSuggestions (topic, breadth):
+  return wikipedia.search(topic, results=breadth)
 
 
 
 # Plans to multithread this
-def wikiIterator(topic, iterCount):
-  if iterCount == None:
-    iterCount = 2
+def wikiIterator(topic, depth, *breadth):
+  if depth == None:
+    depth = 2
+  if breadth == None:
+    breadth = 5
   retval = ''
   current = [topic]
   todo = []
-  while (iterCount > 0):
-    iterCount=iterCount-1
+  while (depth > 0):
+    depth=depth-1
     for item in current:
-      print(item, iterCount)
+      print item
       try:
         retval += getWikiContent(item)
       except:
         pass
-      todo += getWikiSuggestions(item)
-    print(iterCount, ' done')
+      todo += getWikiSuggestions(item, breadth)
+    print(depth, ' done')
     current = todo
     todo = []
   print(topic + ' researched.')
   return retval
 
 
-tf = TfidfVectorizer(input='context', analyzer='word', ngram_range=(1, 5), lowercase=True, min_df=1, stop_words='english')
-
-an = tf.build_analyzer();
+tf = TfidfVectorizer(input='context', analyzer='word', ngram_range=(1,6), lowercase=True, min_df=1, stop_words='english')
 
 for category in categories:
-  corpus = corpus + [wikiIterator(category, 1)]
+  corpus = corpus + [wikiIterator(category, 2, 5)]
 
 # Fit trains the vectorizer
 # Transform looks for that
 X = tf.fit_transform(corpus)
+
+svd = TruncatedSVD()
+normalizer = Normalizer(copy=False)
+lsa = make_pipeline(svd, normalizer)
+
+X = lsa.fit_transform(X)
+
+print(X)
 
 # Initialize the DBSCAN model which will both predict the data given and which we will train with fixed user input
 # Valid values for metrics [‘cityblock’, ‘cosine’, ‘euclidean’, ‘l1’, ‘l2’, ‘manhattan’]
@@ -71,18 +82,17 @@ X = tf.fit_transform(corpus)
 
 
 
-km = KMeans(init='k-means++', algorithm='auto', max_iter=600, n_jobs=10)
-db = DBSCAN(algorithm='auto', n_jobs='5')
+km = KMeans(init='k-means++', algorithm='auto', max_iter=600, n_jobs=10, n_clusters=len(categories), verbose=True)
 
-km.fit_transform(X)
-db.fit(Normalizer().fit_transform(X));
+km.fit(X)
+# This works really well with small documents?
+# ts = tf.fit_transform(['Cooking Cooking Cooking'])
 
-# This works really well
-testSentence = 'Shrimp'
-ts = tf.transform(testSentence)
+test = tf.fit_transform(['cooking pots pans running water marble stove fire heat above 220 degrees cooking cooking chef chef chef', '', '', '', '', '', '', '', '', '']);
 
-print(km.predict(ts))
+test = lsa.fit_transform(test)
 
+print(km.predict(test))
 
 # request should be a jsonified string
 # This should contain purely predicts methods
@@ -101,7 +111,7 @@ def train():
 
 @app.route('/')
 def landing():
-  return 'Scikit learn categorizer'
+  return 'Item Categorizer'
 
 
 

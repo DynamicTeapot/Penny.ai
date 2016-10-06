@@ -1,0 +1,25 @@
+{
+  "name": "mlcategorizer",
+  "version": "0.0.1",
+  "description": "A categorizer which takes in a lsit of categories and then predicts a second input",
+  "main": "index.js",
+  "scripts": {
+    "pip": "pip install flask & pip install numpy & pip install sklearn & pip install wikipedia",
+    "start": "export FLASK_APP=api/server.py && flask run",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DynamicTeapots/Penny.ml.git"
+  },
+  "keywords": [
+    "Machine",
+    "Learning"
+  ],
+  "author": "JulianKnodt <julianknodt@gmail.com>",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/DynamicTeapots/Penny.ml/issues"
+  },
+  "homepage": "https://github.com/DynamicTeapots/Penny.ml#readme"
+}

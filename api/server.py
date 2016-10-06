@@ -21,7 +21,7 @@ import wikipedia
 app = Flask(__name__)
 
 data = DataFrame({'text': [], 'class': []})
-categories = ['cooking', 'bathroom', 'sports', 'hardware', 'cars', 'technology', 'gardening', 'beauty', 'clothing']
+categories = ['cooking', 'bathroom', 'sports', 'hardware', 'cars', 'technology', 'gardening', 'beauty', 'clothing', 'woodworking', 'metalworking', 'housing', 'furniture']
 
 
 def getWikiContent (topic): 
@@ -63,13 +63,9 @@ def wikiIterator(topic, depth, *breadth):
   return {data: retval, topics: alltopics}
 
 
-def wikerator(topic, depth, *breadth):
+def wikerator(topic, depth=2, breadth=10):
   rows = []
   index = []
-  if depth == None:
-    depth = 2
-  if breadth == None:
-    breadth = 5
   retval = ''
   current = [topic]
   todo = []
@@ -116,22 +112,25 @@ pipeline = Pipeline([
   ])
 
 # km = KMeans(init='k-means++', algorithm='auto', max_iter=600, n_jobs=10, n_clusters=2, verbose=True)
-print(pipeline.fit(data['text'].values, data['class'].values).predict(['cooking cars human what a wonderful world hahaha ofihwpidsghisept test che cut dice chop eat eat eat eat eat cooking chef cooking water boiling stove oven']));
+model = pipeline.fit(data['text'].values, data['class'].values)
 
-
+print(model.predict(['cooking cars human what a wonderful world hahaha ofihwpidsghisept test che cut dice chop eat eat eat eat eat cooking chef cooking water boiling stove oven']))
 # request should be a jsonified string
+# Shold run a check to see if the document has enough length to proprely check it, and then specify 
 # This should contain purely predicts methods
 @app.route('/predict', methods=['POST'])
 def predict():
-  data = json.dumps(request.json)
-  return km.predict(data)
+  return model.predict([request.get_json()])
   
 
 # This should contain purely fits methods
 @app.route('/train', methods={'POST'})
 def train():
+  req = request.get_json()
   resp = response(None, status=200)
-  # Not quite sure how to train it with new data yet
+  newData = DataFrame([{'text': req['text'].values, 'class':req['class'].values}], index=req['user'].values)
+  newData.reindex(np.random.permutation(newData.index))
+  model.fit(newData)
   return resp
 
 @app.route('/')

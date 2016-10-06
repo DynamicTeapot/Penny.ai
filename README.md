@@ -1,2 +1,2 @@
-# Penny.ai
-Server which hosts a tensor flow model for classifying objects
+# Penny.ml
+Server which hosts a scikit kmeans model for classifying objects

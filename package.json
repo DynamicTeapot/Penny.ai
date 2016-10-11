@@ -4,7 +4,7 @@
   "description": "A categorizer which takes in a lsit of categories and then predicts a second input",
   "main": "index.js",
   "scripts": {
-    "pip": "pip install flask & pip install numpy & pip install sklearn & pip install wikipedia",
+    "pip": "pip install flask & pip install numpy & pip install sklearn & pip install wikipedia & pip install pandas",
     "start": "export FLASK_APP=api/server.py && flask run",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

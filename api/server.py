@@ -21,7 +21,7 @@ import wikipedia
 app = Flask(__name__)
 
 data = DataFrame({'text': [], 'class': []})
-categories = ['cooking', 'bathroom', 'sports', 'hardware', 'cars', 'technology', 'gardening', 'beauty', 'clothing', 'woodworking', 'metalworking', 'housing', 'furniture']
+categories = ['Cooking', 'Bathroom', 'Sports', 'Hardware', 'Cars', 'Boats', 'Technology', 'Gardening', 'Beauty', 'Antiques', 'Clothing', 'Woodworking', 'Metalworking', 'Appliances' 'Housing', 'Furniture']
 
 
 def getWikiContent (topic): 
@@ -34,33 +34,6 @@ def naiveSuggestions (topic):
   return wikipedia.search(topic)
 
 
-
-
-# Plans to multithread this
-def wikiIterator(topic, depth, *breadth):
-  if depth == None:
-    depth = 2
-  if breadth == None:
-    breadth = 5
-  retval = ''
-  current = [topic]
-  todo = []
-  alltopics = [topic]
-  while (depth > 0):
-    depth=depth-1
-    for item in current:
-      print item
-      try:
-        retval += getWikiContent(item)
-      except:
-        pass
-      todo += getWikiSuggestions(item, breadth)
-    print(depth, ' done')
-    current = todo
-    alltopics = alltopics + todo
-    todo = []
-  print(topic + ' researched.')
-  return {data: retval, topics: alltopics}
 
 
 def wikerator(topic, depth=2, breadth=10):
@@ -93,12 +66,10 @@ def wikerator(topic, depth=2, breadth=10):
 tf = TfidfVectorizer(input='context', analyzer='word', ngram_range=(1,6), lowercase=True, min_df=1, stop_words='english')
 
 for category in categories:
-  data = data.append(wikerator(category, 1, 10))
-data = data.reindex(np.random.permutation(data.index))
-print data
+  data = data.append(wikerator(category, 2, 10))
+# data = data.reset_index()
+# data = data.reindex(np.random.permutation(data.index))
 # Fit trains the vectorizer
-# Transform looks for that
-# X = tf.fit_transform(data['text'].values)
 
 # svd = TruncatedSVD()
 # normalizer = Normalizer(copy=False)
@@ -114,23 +85,25 @@ pipeline = Pipeline([
 # km = KMeans(init='k-means++', algorithm='auto', max_iter=600, n_jobs=10, n_clusters=2, verbose=True)
 model = pipeline.fit(data['text'].values, data['class'].values)
 
-print(model.predict(['cooking cars human what a wonderful world hahaha ofihwpidsghisept test che cut dice chop eat eat eat eat eat cooking chef cooking water boiling stove oven']))
+print model.predict(['What a great flower garden temple waterfall flower flower garden grass weeds flowers flowers grass']);
 # request should be a jsonified string
 # Shold run a check to see if the document has enough length to proprely check it, and then specify 
 # This should contain purely predicts methods
 @app.route('/predict', methods=['POST'])
 def predict():
-  return model.predict([request.get_json()])
-  
+  result = model.predict([request.form['data']])
+  return result[0]
 
 # This should contain purely fits methods
 @app.route('/train', methods={'POST'})
 def train():
-  req = request.get_json()
+  req = request.form['categories']
   resp = response(None, status=200)
-  newData = DataFrame([{'text': req['text'].values, 'class':req['class'].values}], index=req['user'].values)
-  newData.reindex(np.random.permutation(newData.index))
-  model.fit(newData)
+  newData = DataFrame({'text': [], 'class': []})
+  for category in req:
+    newData = newData.append(wikerator(category, 1, 10))
+  newData = newData.reindex(np.random.permutation(data.index))
+  model.fit(newData['text'].values, newData['class'].values)
   return resp
 
 @app.route('/')
